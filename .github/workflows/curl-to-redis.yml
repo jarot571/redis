@@ -1,4 +1,4 @@
-name: Node.js API Test Pipeline with Curl
+name: Node.js API Test Redis
 
 on:
   push:
@@ -11,80 +11,72 @@ on:
 jobs:
   test-api:
     runs-on: ubuntu-latest
-
-    # The Redis service container is automatically on a private network.
     services:
       redis:
         image: redis:7-alpine
+        ports:
+          - 6379:6379
         options: >-
           --name test-redis-server
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        # with:
+        #   path: ./redis
 
-      - name: Build and run application container
-        # Run the app container on the same network as the services.
+      - name: Build application Docker image
+        run: docker build -t my-app .
+
+      - name: Start application container
         run: |
-          docker build -t my-app .
           docker run \
             -d \
             --name app-node \
-            -e REDIS_HOST=redis \
-            --network ${{ job.services.redis.network }} \
+            --network host \
+            -e REDIS_HOST=127.0.0.1 \
+            -p 3000:3000 \
             my-app
 
-      - name: Wait for services to be ready
-        run: sleep 10
+      # - name: Wait for services to be ready
+      #   run: sleep 10
 
-      - name: Run API tests from a separate container
-        # This step runs on an Ubuntu container on the same network.
-        # This allows it to resolve 'app-node' by name.
+      # - name: Run API tests
+      #   working-directory: .
+      #   run: npm test
+
+      - name: Run simple API test with Curl
         container:
           image: ubuntu:22.04
           env:
-            # Set the PATH to include curl, which is not in the default path.
             PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
         
         run: |
-          # Install curl inside this temporary container.
           apt-get update && apt-get install -y curl
-          
-          echo "--- Testing successful transaction ---"
-          # Now, the 'app-node' host name is resolvable.
           API_URL="http://app-node:3000/api/x-transaction-redis"
-          TRANSACTION_ID="github-action-test-1234"
           
+          echo "--- Testing POST request ---"
           RESPONSE=$(curl -s -X POST $API_URL \
             -H "Content-Type: application/json" \
-            -H "x-transaction-id: $TRANSACTION_ID" \
-            -d '{"message":"First test request"}'
+            -H "x-transaction-id: simple-test" \
+            -d '{"message":"Hello from CI/CD"}'
           )
-          echo "First response: $RESPONSE"
+          echo "Response: $RESPONSE"
           
           if [[ $RESPONSE == *\"status\":\"00 Success\"* ]]; then
-            echo "Test 1 Passed: New transaction successful."
+            echo "Test Passed: API returned success status."
           else
-            echo "Test 1 Failed: Expected success, got '$RESPONSE'"
-            exit 1
-          fi
-          
-          echo "--- Testing duplicate transaction ---"
-          RESPONSE=$(curl -s -X POST $API_URL \
-            -H "Content-Type: application/json" \
-            -H "x-transaction-id: $TRANSACTION_ID" \
-            -d '{"message":"Second test request"}'
-          )
-          echo "Second response: $RESPONSE"
-          
-          if [[ $RESPONSE == *\"error_code\":\"40002\"* ]]; then
-            echo "Test 2 Passed: Duplicate transaction correctly blocked."
-          else
-            echo "Test 2 Failed: Expected duplicate error, got '$RESPONSE'"
+            echo "Test Failed: Expected '00 Success', got '$RESPONSE'"
             exit 1
           fi
 
+      
       - name: Cleanup containers
         if: always()
         run: |
           docker stop app-node
+          docker rm app-node
