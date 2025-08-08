@@ -28,10 +28,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+        # with:
+        #   path: ./redis
 
       - name: Build application Docker image
-        run: docker build -t my-app ./redis
+        run: docker build -t my-app .
 
       - name: Start application container
         run: |
@@ -47,7 +48,7 @@ jobs:
         run: sleep 10
 
       - name: Run API tests
-        working-directory: ./redis
+        working-directory: .
         run: npm test
 
       - name: Cleanup containers
