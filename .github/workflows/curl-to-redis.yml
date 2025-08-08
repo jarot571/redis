@@ -11,8 +11,6 @@ on:
 jobs:
   test-api:
     runs-on: ubuntu-latest
-
-    # Define the Redis service container that your app will connect to.
     services:
       redis:
         image: redis:7-alpine
@@ -44,8 +42,8 @@ jobs:
             -p 3000:3000 \
             my-app
 
-      - name: Wait for services to be ready
-        run: sleep 10
+      # - name: Wait for services to be ready
+      #   run: sleep 10
 
       # - name: Run API tests
       #   working-directory: .
