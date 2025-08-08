@@ -28,6 +28,21 @@ jobs:
         # with:
         #   path: ./redis
 
+      - name: Wait for Redis service to be ready
+        run: |
+          # Use a loop with redis-cli to check for the PONG response
+          echo "Waiting for Redis to be healthy..."
+          for i in $(seq 1 10); do
+            if docker exec test-redis-server redis-cli ping | grep -q PONG; then
+              echo "Redis is up and running!"
+              exit 0
+            fi
+            echo "Attempt $i failed. Waiting 5 seconds..."
+            sleep 5
+          done
+          echo "Redis service failed to start after multiple attempts."
+          exit 1
+          
       - name: Build application Docker image
         run: docker build -t my-app .
 
@@ -37,7 +52,7 @@ jobs:
             -d \
             --name app-node \
             --network host \
-            -e REDIS_HOST=127.0.0.1 \
+            -e REDIS_HOST=127.0.0.1 \ # Use host network for Redis connection
             -p 3000:3000 \
             my-app
       # - name: Wait for services to be ready
