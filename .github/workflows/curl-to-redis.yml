@@ -1,4 +1,4 @@
-name: Node.js API Test Pipeline
+name: Node.js API Test Redis
 
 on:
   push:
@@ -47,9 +47,48 @@ jobs:
       - name: Wait for services to be ready
         run: sleep 10
 
-      - name: Run API tests
-        working-directory: .
-        run: npm test
+      # - name: Run API tests
+      #   working-directory: .
+      #   run: npm test
+
+      - name: Run API tests with Curl
+        run: |
+          # The app container is on the same network as the Redis service,
+          # and it listens on port 3000.
+          API_URL="http://app-node:3000/api/x-transaction-redis"
+          TRANSACTION_ID="github-action-test-1234"
+          
+          echo "--- Testing successful transaction ---"
+          # Send a new transaction and check for success.
+          RESPONSE=$(curl -s -X POST $API_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: $TRANSACTION_ID" \
+            -d '{"message":"First test request"}'
+          )
+          echo "First response: $RESPONSE"
+          
+          if [[ $RESPONSE == *\"status\":\"00 Success\"* ]]; then
+            echo "Test 1 Passed: New transaction successful."
+          else
+            echo "Test 1 Failed: Expected success, got '$RESPONSE'"
+            exit 1
+          fi
+          
+          echo "--- Testing duplicate transaction ---"
+          # Send the same transaction ID and check for a duplicate error.
+          RESPONSE=$(curl -s -X POST $API_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: $TRANSACTION_ID" \
+            -d '{"message":"Second test request"}'
+          )
+          echo "Second response: $RESPONSE"
+          
+          if [[ $RESPONSE == *\"error_code\":\"40002\"* ]]; then
+            echo "Test 2 Passed: Duplicate transaction correctly blocked."
+          else
+            echo "Test 2 Failed: Expected duplicate error, got '$RESPONSE'"
+            exit 1
+          fi
 
       - name: Cleanup containers
         if: always()
