@@ -28,11 +28,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        # with:
-        #   path: ./redis
+
 
       - name: Build application Docker image
-        run: docker build -t my-app .
+        run: docker build -t my-app ./redis
 
       - name: Start application container
         run: |
