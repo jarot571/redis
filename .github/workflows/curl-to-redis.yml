@@ -1,47 +1,48 @@
-name: redis
+name: Build and Test Redis Image
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+on: [push]
 
 jobs:
-  test-redis:
+  build_and_test_redis:
     runs-on: ubuntu-latest
-
-    services:
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --name redis-server
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Build Redis Docker image
+        id: build
+        run: |
+          docker build -t my-redis-image .
+          echo "Image built successfully!"
 
-      - name: Install dependencies
-        # This is the corrected path to the directory with package.json
-        working-directory: ./redis/
-        run: npm install
+      - name: Run Redis container
+        id: run
+        run: |
+          # The -d flag runs the container in detached mode (in the background)
+          docker run --name test-redis -d my-redis-image
+          echo "Container started."
 
-      - name: Run tests with Redis
-        # This also needs to be corrected to the right path
-        working-directory: ./redis/
-        env:
-          REDIS_HOST: redis
-          REDIS_PORT: 6379
-        run: npm test # Or whatever command you use to run your tests
+      - name: Wait for Redis to be ready
+        # Give the container a few seconds to start up completely
+        run: sleep 5
+
+      - name: Test Redis connection with ping/pong
+        id: test
+        run: |
+          # Use docker exec to run a command inside the running container.
+          # We call redis-cli and pipe its output to a variable.
+          RESULT=$(docker exec test-redis redis-cli ping)
+          
+          # Check if the result is 'PONG'
+          if [[ "$RESULT" == "PONG" ]]; then
+            echo "✅ Redis test successful: Ping responded with Pong!"
+          else
+            echo "❌ Redis test failed: Expected PONG, got '$RESULT'"
+            exit 1
+          fi
+
+      - name: Stop and remove container
+        # This step cleans up the container whether the test passed or failed
+        if: always()
+        run: docker rm -f test-redis
