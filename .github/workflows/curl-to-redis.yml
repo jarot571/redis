@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          path: ./redis
 
       - name: Build application Docker image
         run: docker build -t my-app .
@@ -36,7 +38,7 @@ jobs:
         run: |
           docker run \
             -d \
-            --name my-app-container \
+            --name app-node \
             --network host \
             -e REDIS_HOST=127.0.0.1 \
             -p 3000:3000 \
@@ -46,12 +48,11 @@ jobs:
         run: sleep 10
 
       - name: Run API tests
-        # The `npm test` command will execute the test.js script,
-        # which performs the API calls and checks.
+        working-directory: ./redis
         run: npm test
 
       - name: Cleanup containers
         if: always()
         run: |
-          docker stop my-app-container
-          docker rm my-app-container
+          docker stop app-node
+          docker rm app-node
