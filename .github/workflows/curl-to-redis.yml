@@ -1,4 +1,4 @@
-name: redis
+name: curl-to-redis
 
 on:
   push:
@@ -9,13 +9,11 @@ on:
       - main
 
 jobs:
-  test-redis:
+  post-to-redis:
     runs-on: ubuntu-latest
 
     services:
-      # This block sets up a Redis service
       redis:
-        # Use the official Redis Docker image
         image: redis:7-alpine
         options: >-
           --name redis-server
@@ -36,11 +34,12 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
+        # This tells the step to run the command in the root of your repository
+        working-directory: ./
         run: npm install
 
       - name: Run tests with Redis
-        # The REDIS_HOST environment variable is set to the service name
-        # The REDIS_PORT is set to the exposed port
+        working-directory: ./
         env:
           REDIS_HOST: redis
           REDIS_PORT: 6379
