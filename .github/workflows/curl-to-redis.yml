@@ -1,4 +1,4 @@
-name: Node.js API Test Redis
+name: Node.js API Test Pipeline with Curl
 
 on:
   push:
@@ -11,51 +11,50 @@ on:
 jobs:
   test-api:
     runs-on: ubuntu-latest
+
+    # The Redis service container is automatically on a private network.
     services:
       redis:
         image: redis:7-alpine
-        ports:
-          - 6379:6379
         options: >-
           --name test-redis-server
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        # with:
-        #   path: ./redis
 
-      - name: Build application Docker image
-        run: docker build -t my-app .
-
-      - name: Start application container
+      - name: Build and run application container
+        # Run the app container on the same network as the services.
         run: |
+          docker build -t my-app .
           docker run \
             -d \
             --name app-node \
-            --network host \
-            -e REDIS_HOST=127.0.0.1 \
-            -p 3000:3000 \
+            -e REDIS_HOST=redis \
+            --network ${{ job.services.redis.network }} \
             my-app
 
-      # - name: Wait for services to be ready
-      #   run: sleep 10
+      - name: Wait for services to be ready
+        run: sleep 10
 
-      # - name: Run API tests
-      #   working-directory: .
-      #   run: npm test
-
-      - name: Run API tests with Curl
+      - name: Run API tests from a separate container
+        # This step runs on an Ubuntu container on the same network.
+        # This allows it to resolve 'app-node' by name.
+        container:
+          image: ubuntu:22.04
+          env:
+            # Set the PATH to include curl, which is not in the default path.
+            PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        
         run: |
-          # This is the key fix: use 'localhost' with the mapped port.
-          API_URL="http://localhost:3000/api/x-transaction-redis"
-          TRANSACTION_ID="github-action-test-1234"
+          # Install curl inside this temporary container.
+          apt-get update && apt-get install -y curl
           
           echo "--- Testing successful transaction ---"
+          # Now, the 'app-node' host name is resolvable.
+          API_URL="http://app-node:3000/api/x-transaction-redis"
+          TRANSACTION_ID="github-action-test-1234"
+          
           RESPONSE=$(curl -s -X POST $API_URL \
             -H "Content-Type: application/json" \
             -H "x-transaction-id: $TRANSACTION_ID" \
@@ -89,4 +88,3 @@ jobs:
         if: always()
         run: |
           docker stop app-node
-          docker rm app-node
