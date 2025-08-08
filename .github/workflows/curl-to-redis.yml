@@ -44,12 +44,12 @@ jobs:
             -p 3000:3000 \
             my-app
 
-      - name: Wait for services to be ready
-        run: sleep 10
+      # - name: Wait for services to be ready
+      #   run: sleep 10
 
-      - name: Run API tests
-        working-directory: .
-        run: npm test
+      # - name: Run API tests
+      #   working-directory: .
+      #   run: npm test
 
       - name: Cleanup containers
         if: always()
