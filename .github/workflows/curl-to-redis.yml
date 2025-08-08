@@ -22,7 +22,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,7 +40,6 @@ jobs:
             -e REDIS_HOST=127.0.0.1 \
             -p 3000:3000 \
             my-app
-
       # - name: Wait for services to be ready
       #   run: sleep 10
 
@@ -49,12 +47,7 @@ jobs:
       #   working-directory: .
       #   run: npm test
 
-      - name: Run simple API test with Curl
-        container:
-          image: ubuntu:22.04
-          env:
-            PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-        
+      - name: Run API tests with Curl
         run: |
           apt-get update && apt-get install -y curl
           API_URL="http://app-node:3000/api/x-transaction-redis"
@@ -74,7 +67,7 @@ jobs:
             exit 1
           fi
 
-      
+          
       - name: Cleanup containers
         if: always()
         run: |
