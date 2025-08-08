@@ -54,17 +54,15 @@ jobs:
             -p 3000:3000 \
             my-app
 
-      # --- This is the new/uncommented step to send the API request ---
       - name: Run API tests with Curl
         run: |
           echo "Waiting for app-node to be ready..."
-          sleep 10 # Wait for the application to fully start and listen on port 3000
+          sleep 10
           
           API_URL="http://127.0.0.1:3000/api/x-transaction-redis"
           
           echo "--- Testing POST request to $API_URL ---"
           
-          # Send the POST request and capture the response in a variable
           RESPONSE=$(curl -s -X POST $API_URL \
             -H "Content-Type: application/json" \
             -H "x-transaction-id: simple-test" \
@@ -73,13 +71,14 @@ jobs:
           
           echo "API Response: $RESPONSE"
           
-          # Check if the response contains the expected success status
-          if [[ $RESPONSE == *\"status\":\"00 Success\"* ]]; then
+          # Use the correct regular expression syntax for the conditional
+          if [[ $RESPONSE =~ \"status\":\"00 Success\" ]]; then
             echo "Test Passed: API returned the expected success status."
           else
             echo "Test Failed: Expected '00 Success', got '$RESPONSE'"
             exit 1
           fi
+
       - name: Cleanup containers
         if: always()
         run: |
