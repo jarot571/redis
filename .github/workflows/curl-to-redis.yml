@@ -1,0 +1,47 @@
+name: redis
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-redis:
+    runs-on: ubuntu-latest
+
+    services:
+      # This block sets up a Redis service
+      redis:
+        # Use the official Redis Docker image
+        image: redis:7-alpine
+        options: >-
+          --name redis-server
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests with Redis
+        # The REDIS_HOST environment variable is set to the service name
+        # The REDIS_PORT is set to the exposed port
+        env:
+          REDIS_HOST: redis
+          REDIS_PORT: 6379
+        run: npm test # Or whatever command you use to run your tests
