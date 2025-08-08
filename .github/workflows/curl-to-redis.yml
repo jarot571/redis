@@ -1,4 +1,4 @@
-name: curl-to-redis
+name: redis
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  post-to-redis:
+  test-redis:
     runs-on: ubuntu-latest
 
     services:
@@ -34,12 +34,13 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        # This tells the step to run the command in the root of your repository
-        working-directory: ./
+        # This is the corrected path to the directory with package.json
+        working-directory: ./redis/
         run: npm install
 
       - name: Run tests with Redis
-        working-directory: ./
+        # This also needs to be corrected to the right path
+        working-directory: ./redis/
         env:
           REDIS_HOST: redis
           REDIS_PORT: 6379
