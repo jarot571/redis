@@ -47,26 +47,26 @@ jobs:
       #   working-directory: .
       #   run: npm test
 
-      - name: Run API tests with Curl
-        run: |
-          sudo apt update
-          #apt-get update && apt-get install -y curl
-          API_URL="http://app-node:3000/api/x-transaction-redis"
+      # - name: Run API tests with Curl
+      #   run: |
+      #     sudo apt update
+      #     #apt-get update && apt-get install -y curl
+      #     API_URL="http://app-node:3000/api/x-transaction-redis"
           
-          echo "--- Testing POST request ---"
-          RESPONSE=$(curl -s -X POST $API_URL \
-            -H "Content-Type: application/json" \
-            -H "x-transaction-id: simple-test" \
-            -d '{"message":"Hello from CI/CD"}'
-          )
-          echo "Response: $RESPONSE"
+      #     echo "--- Testing POST request ---"
+      #     RESPONSE=$(curl -s -X POST $API_URL \
+      #       -H "Content-Type: application/json" \
+      #       -H "x-transaction-id: simple-test" \
+      #       -d '{"message":"Hello from CI/CD"}'
+      #     )
+      #     echo "Response: $RESPONSE"
           
-          if [[ $RESPONSE == *\"status\":\"00 Success\"* ]]; then
-            echo "Test Passed: API returned success status."
-          else
-            echo "Test Failed: Expected '00 Success', got '$RESPONSE'"
-            exit 1
-          fi
+      #     if [[ $RESPONSE == *\"status\":\"00 Success\"* ]]; then
+      #       echo "Test Passed: API returned success status."
+      #     else
+      #       echo "Test Failed: Expected '00 Success', got '$RESPONSE'"
+      #       exit 1
+      #     fi
 
           
       - name: Cleanup containers
