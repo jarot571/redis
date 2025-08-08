@@ -51,13 +51,11 @@ jobs:
 
       - name: Run API tests with Curl
         run: |
-          # The app container is on the same network as the Redis service,
-          # and it listens on port 3000.
-          API_URL="http://app-node:3000/api/x-transaction-redis"
+          # This is the key fix: use 'localhost' with the mapped port.
+          API_URL="http://localhost:3000/api/x-transaction-redis"
           TRANSACTION_ID="github-action-test-1234"
           
           echo "--- Testing successful transaction ---"
-          # Send a new transaction and check for success.
           RESPONSE=$(curl -s -X POST $API_URL \
             -H "Content-Type: application/json" \
             -H "x-transaction-id: $TRANSACTION_ID" \
@@ -73,7 +71,6 @@ jobs:
           fi
           
           echo "--- Testing duplicate transaction ---"
-          # Send the same transaction ID and check for a duplicate error.
           RESPONSE=$(curl -s -X POST $API_URL \
             -H "Content-Type: application/json" \
             -H "x-transaction-id: $TRANSACTION_ID" \
