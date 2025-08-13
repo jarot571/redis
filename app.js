@@ -5,10 +5,7 @@ const checkDuplicateTransaction = require('./checkDuplicateTransaction');
 
 app.use(express.json());
 
-app.use(checkDuplicateTransaction);
-
-
-app.post('/api/x-transaction-redis', async (req, res) => {
+app.post('/api/x-transaction-redis', checkDuplicateTransaction, async (req, res) => {
   try {
     const payload = req.body;
     res.json({ status: '00 Success', payload });
