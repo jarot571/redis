@@ -50,82 +50,45 @@ jobs:
             -d \
             --name app-node \
             --network host \
-            # Use host networking for Redis
             -e REDIS_HOST=127.0.0.1 \
             -p 3000:3000 \
             my-app
-
-
-      # - name: Run API tests with Curl
-      #   run: |
-      #     echo "Waiting for app-node to be ready..."
-      #     sleep 10
-          
-      #     API_URL="http://127.0.0.1:3000/api/x-transaction-redis"
-          
-      #     echo "--- Testing POST request to $API_URL ---"
-          
-      #     RESPONSE1=$(curl -s -X POST $API_URL \
-      #       -H "Content-Type: application/json" \
-      #       -H "x-transaction-id: simple-test" \
-      #       -d '{"message":"Hello from CI/CD"}' \
-      #     )
-      #     echo "API-req-1 Response: $RESPONSE1"
-
-      #     RESPONSE2=$(curl -s -X POST $API_URL \
-      #       -H "Content-Type: application/json" \
-      #       -H "x-transaction-id: simple-test" \
-      #       -d '{"message":"Hello from CI/CD"}' \
-      #     )
-      #     echo "API-req-2 Response: $RESPONSE2"
-
-      #     RESPONSE3=$(curl -s -X POST $API_URL \
-      #       -H "Content-Type: application/json" \
-      #       -H "x-transaction-id: simple-test" \
-      #       -d '{"message":"Hello from CI/CD"}' \
-      #     )
-          
-      #     echo "API-req-3 Response: $RESPONSE3"
-          
-      #     # # Use the correct regular expression syntax for the conditional
-      #     # if [[ $RESPONSE =~ \"status\":\"00 Success\" ]]; then
-      #     #   echo "Test Passed: API returned the expected success status."
-      #     # else
-      #     #   echo "Test Failed: Expected '00 Success', got '$RESPONSE'"
-      #     #   exit 1
-      #     # fi
       - name: Run API tests with Curl
         run: |
           echo "Waiting for app-node to be ready..."
           sleep 10
           
           API_URL="http://127.0.0.1:3000/api/x-transaction-redis"
-          API_BYPASS_URL="http://127.0.0.1:3000/api/api/bypass"
-          TRANSACTION_ID="TEST20250813"
-          PAYLOAD='{"message":"Rub Test from CI/CD"}'
           
-          for i in 1 2 3; do
-            echo "--- Testing POST request #$i to $API_URL ---"
-            RESPONSE=$(curl -s -X POST "$API_URL" \
-              -H "Content-Type: application/json" \
-              -H "x-transaction-id: $TRANSACTION_ID" \
-              -d "$PAYLOAD"
-            )
-            echo "API-req-$i Response: $RESPONSE"
-          done
-
-
-
-          for i in 1 2 3; do
-            echo "--- Testing POST request #$i to $API_BYPASS_URL ---"
-            RESPONSE=$(curl -s -X POST "$API_BYPASS_URL" \
-              -H "Content-Type: application/json" \
-              -H "x-transaction-id: $TRANSACTION_ID" \
-              -d "$PAYLOAD"
-            )
-            echo "API-req-$i Response: $RESPONSE"
-          done
-
+          echo "--- Testing POST request to $API_URL ---"
+          
+          RESPONSE1=$(curl -s -X POST $API_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: simple-test" \
+            -d '{"message":"Hello from CI/CD"}' \
+          )
+          echo "API-req-1 Response: $RESPONSE1"
+          RESPONSE2=$(curl -s -X POST $API_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: simple-test" \
+            -d '{"message":"Hello from CI/CD"}' \
+          )
+          echo "API-req-2 Response: $RESPONSE2"
+          RESPONSE3=$(curl -s -X POST $API_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: simple-test" \
+            -d '{"message":"Hello from CI/CD"}' \
+          )
+          
+          echo "API-req-3 Response: $RESPONSE3"
+          
+          # # Use the correct regular expression syntax for the conditional
+          # if [[ $RESPONSE =~ \"status\":\"00 Success\" ]]; then
+          #   echo "Test Passed: API returned the expected success status."
+          # else
+          #   echo "Test Failed: Expected '00 Success', got '$RESPONSE'"
+          #   exit 1
+          # fi
       - name: Cleanup containers
         if: always()
         run: |
