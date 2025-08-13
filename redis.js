@@ -24,4 +24,6 @@ redisClient.connect()
     console.error('Failed to connect to Redis:', err);
   });
 
+
+  
 module.exports = redisClient;
