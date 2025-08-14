@@ -48,9 +48,10 @@ jobs:
         run: |
           docker run -d \
             --name app-node \
-            -e REDIS_HOST=redis \
-            -p 3000:3000 \
+            --network host \
+            -e REDIS_HOST=127.0.0.1 \
             my-app
+
 
       - name: Wait for app to be ready
         run: |
