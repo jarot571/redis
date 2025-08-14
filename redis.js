@@ -1,16 +1,29 @@
 const redis = require('redis');
 
 const redisClient = redis.createClient({
-  host:  '127.0.0.1',//'redis-FBB4System-az-asse-dev-001.redis.cache.windows.net', // or your Redis server host
-  port: 6379
+  socket: {
+    host: process.env.REDIS_HOST || '127.0.0.1', //kubernetes Service Name
+    port: process.env.REDIS_PORT || 6379, //default Port Redis
+  }
 });
 
-// Event handlers
+// Handle connection events
 redisClient.on('connect', () => {
-  console.log('Connected to Redis');
+  console.log('Connected to Redis server');
 });
 
 redisClient.on('error', (err) => {
-  console.error('Redis error:', err);
+  console.error('Redis connection error:', err);
 });
 
+redisClient.connect()
+  .then(() => {
+    console.log('Successfully connected to Redis');
+  })
+  .catch((err) => {
+    console.error('Failed to connect to Redis:', err);
+  });
+
+
+  
+module.exports = redisClient;
