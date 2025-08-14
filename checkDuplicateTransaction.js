@@ -1,4 +1,4 @@
-const redisClient = require('./redis');
+const redisClient = require('./redis'); // Make sure this exports the client
 const { promisify } = require('util');
 
 const getAsync = promisify(redisClient.get).bind(redisClient);
@@ -25,7 +25,7 @@ const checkDuplicateTransaction = async (req, res, next) => {
         console.warn(`Duplicate transaction detected for ID: ${transactionId}`);
         return responseError(res, genErrorResponseObj(req, '40002', 'Duplicate transaction ID'));
       }
-      await setAsync(transactionId, 'true', 'EX', 60);
+      await setAsync(transactionId, 'true', 'EX', 60); // expires in 60 seconds
     } catch (e) {
       console.error('Redis error in checkDuplicateTransaction:', e);
       return responseError(res, genErrorResponseObj(req, '50000', 'Internal server error with Redis'));
