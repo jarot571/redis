@@ -27,46 +27,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Wait for Redis service to be ready
+      - name: Wait for Redis service
         run: |
-          echo "Waiting for Redis to be healthy..."
+          echo "Waiting for Redis..."
           for i in $(seq 1 10); do
             if docker exec test-redis-server redis-cli ping | grep -q PONG; then
-              echo "Redis is up and running!"
+              echo "Redis is ready!"
               exit 0
             fi
-            echo "Attempt $i failed. Waiting 5 seconds..."
+            echo "Attempt $i failed, retrying..."
             sleep 5
           done
-          echo "Redis service failed to start after multiple attempts."
+          echo "Redis did not start"
           exit 1
 
-      - name: Build application Docker image
+      - name: Build Node.js Docker image
         run: docker build -t my-app .
 
-      - name: Start application container
+      - name: Start Node.js container
         run: |
-          docker run \
-            -d \
+          docker run -d \
             --name app-node \
             -p 3000:3000 \
             -e REDIS_HOST=redis \
             my-app
 
-      - name: Wait for Node app to be ready
+      - name: Wait for Node.js app
         run: |
           API_URL="http://127.0.0.1:3000/api/x-transaction-redis"
-          echo "Waiting for app-node to be ready..."
           for i in $(seq 1 20); do
             if curl -s $API_URL >/dev/null; then
               echo "App-node is ready!"
               break
             fi
-            echo "Attempt $i: App not ready yet, retrying in 5s..."
+            echo "Attempt $i: App not ready yet..."
             sleep 5
           done
 
-      - name: Run API tests with Curl
+      - name: Run API tests
         run: |
           API_URL="http://127.0.0.1:3000/api/x-transaction-redis"
           API_BYPASS_URL="http://127.0.0.1:3000/api/bypass"
@@ -74,7 +72,7 @@ jobs:
           for url in $API_URL $API_URL $API_URL $API_BYPASS_URL $API_BYPASS_URL $API_BYPASS_URL; do
             RESPONSE=$(curl -s -X POST $url \
               -H "Content-Type: application/json" \
-              -H "x-transaction-id: 2025-08-13" \
+              -H "x-transaction-id: 2025-08-14" \
               -d '{"message":"Test from CI/CD"}')
             echo "Response from $url: $RESPONSE"
           done

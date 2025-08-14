@@ -1,20 +1,20 @@
-# Use a Node.js 20-alpine base image for a small, efficient container.
+# Use Node.js 20-alpine for a small container
 FROM node:20-alpine
 
-# Set the working directory inside the container.
+# Set working directory
 WORKDIR /app
 
-# Copy only package files first to leverage Docker layer caching.
+# Copy package files first to leverage caching
 COPY package*.json ./
 
-# Install project dependencies.
+# Install dependencies
 RUN npm ci --omit=dev
 
-# Copy the rest of the project files.
+# Copy the rest of the app
 COPY . .
 
-# Expose the port the app listens on.
+# Expose port
 EXPOSE 3000
 
-# Default command to run the application.
+# Start the app
 CMD ["node", "app.js"]
