@@ -1,20 +1,20 @@
-# Use a Node.js 20-alpine base image for a small, efficient container.
+# Use Node 10 Alpine
 FROM node:10.19.0-alpine
 
-# Set the working directory inside the container.
+# Set working directory
 WORKDIR /app
 
-# Copy the package.json and package-lock.json to install dependencies.
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install project dependencies.
-RUN npm install
+# Install dependencies
+RUN npm install --only=prod
 
-# Copy the entire project into the container.
+# Copy the rest of the app
 COPY . .
 
-# Expose the port the app listens on.
+# Expose port
 EXPOSE 3000
 
-# Command to run the application.
-CMD [ "node", "app.js" ]
+# Start the server
+CMD ["node", "app.js"]
