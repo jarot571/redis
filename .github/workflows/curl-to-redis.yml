@@ -81,30 +81,24 @@ jobs:
             -d '{"message":"Test from CI/CD"}' \
           )
           echo "API-req-3 Response: $RESPONSE3"
-
-
           RESPONSE4=$(curl -s -X POST $API_BYPASS_URL \
             -H "Content-Type: application/json" \
             -H "x-transaction-id: 2025-08-13" \
             -d '{"message":"Test from CI/CD"}' \
           )
           echo "API-req-4 Response: $RESPONSE4"
-
           RESPONSE5=$(curl -s -X POST $API_BYPASS_URL \
             -H "Content-Type: application/json" \
             -H "x-transaction-id: 2025-08-13" \
             -d '{"message":"Test from CI/CD"}' \
           )
           echo "API-req-5 Response: $RESPONSE5"
-
-
           RESPONSE6=$(curl -s -X POST $API_BYPASS_URL \
             -H "Content-Type: application/json" \
             -H "x-transaction-id: 2025-08-13" \
             -d '{"message":"Test from CI/CD"}' \
           )
           echo "API-req-6 Response: $RESPONSE6"
-
       - name: Cleanup containers
         if: always()
         run: |
