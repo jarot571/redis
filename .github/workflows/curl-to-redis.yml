@@ -1,11 +1,28 @@
+name: Node.js API Test Redis
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
 jobs:
   test-api:
     runs-on: ubuntu-latest
+
     services:
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
       app:
         image: my-app
         ports:
@@ -14,12 +31,13 @@ jobs:
           --env REDIS_HOST=redis
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Wait for app to start
+      - name: Wait for Node app to start
         run: |
           echo "Waiting for Node app to start..."
-          for i in $(seq 1 10); do
+          for i in $(seq 1 15); do
             if curl -s http://app:3000 >/dev/null; then
               echo "Node app is up!"
               break
@@ -30,7 +48,31 @@ jobs:
 
       - name: Run API tests
         run: |
-          curl -s -X POST http://app:3000/api/x-transaction-redis \
+          API_URL="http://app:3000/api/x-transaction-redis"
+          API_BYPASS_URL="http://app:3000/api/bypass"
+
+          echo "--- Testing /api/x-transaction-redis ---"
+          RESPONSE1=$(curl -s -X POST $API_URL \
             -H "Content-Type: application/json" \
             -H "x-transaction-id: 2025-08-13" \
-            -d '{"message":"Test from CI/CD"}'
+            -d '{"message":"Test from CI/CD"}')
+          echo "Response 1: $RESPONSE1"
+
+          RESPONSE2=$(curl -s -X POST $API_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: 2025-08-13" \
+            -d '{"message":"Test from CI/CD"}')
+          echo "Response 2 (should detect duplicate): $RESPONSE2"
+
+          echo "--- Testing /api/bypass ---"
+          RESPONSE3=$(curl -s -X POST $API_BYPASS_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: 2025-08-13" \
+            -d '{"message":"Test from CI/CD"}')
+          echo "Response 3: $RESPONSE3"
+
+          RESPONSE4=$(curl -s -X POST $API_BYPASS_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: 2025-08-13" \
+            -d '{"message":"Test from CI/CD"}')
+          echo "Response 4: $RESPONSE4"
