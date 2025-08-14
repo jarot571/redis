@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       redis:
-        image: redis:5.8.1
+        image: redis:5.0-alpine
         ports:
           - 6379:6379
         options: >-
