@@ -1,8 +1,4 @@
 const redisClient = require('./redis');
-const { promisify } = require('util');
-
-const getAsync = promisify(redisClient.get).bind(redisClient);
-const setAsync = promisify(redisClient.set).bind(redisClient);
 
 const genErrorResponseObj = (req, code, message) => ({
   error_code: code,
@@ -20,12 +16,12 @@ const checkDuplicateTransaction = async (req, res, next) => {
 
   if (transactionId) {
     try {
-      const isDuplicate = await getAsync(transactionId);
+      const isDuplicate = await redisClient.get(transactionId);
       if (isDuplicate) {
         console.warn(`Duplicate transaction detected for ID: ${transactionId}`);
         return responseError(res, genErrorResponseObj(req, '40002', 'Duplicate transaction ID'));
       }
-      await setAsync(transactionId, 'true', 'EX', 60);
+      await redisClient.set(transactionId, 'true', 'EX', 60);
     } catch (e) {
       console.error('Redis error in checkDuplicateTransaction:', e);
       return responseError(res, genErrorResponseObj(req, '50000', 'Internal server error with Redis'));
