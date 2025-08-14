@@ -1,5 +1,5 @@
-# Use Node.js 20-alpine for a small container
-FROM node:20-alpine
+# Use a Node.js 20-alpine base image for a small, efficient container.
+FROM node:10.19.0-alpine
 
 # Set working directory
 WORKDIR /app
