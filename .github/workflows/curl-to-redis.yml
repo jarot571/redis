@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       redis:
-        image: redis:5.0-alpine
+        image: redis:5.0
         ports:
           - 6379:6379
         options: >-
@@ -48,7 +48,8 @@ jobs:
         run: |
           docker run -d \
             --name app-node \
-            -e REDIS_HOST=test-redis-server \
+            --network host \
+            -e REDIS_HOST=127.0.0.1 \
             -p 3000:3000 \
             my-app
 
@@ -58,17 +59,16 @@ jobs:
           for i in $(seq 1 15); do
             if curl -s http://127.0.0.1:3000/api/x-transaction-redis >/dev/null 2>&1; then
               echo "App is ready!"
-              break
+              exit 0
             fi
             echo "Attempt $i failed. Waiting 2 seconds..."
             sleep 2
           done
+          echo "App failed to start"
+          exit 1
 
       - name: Run API tests with Curl
         run: |
-          API_URL="http://127.0.0.1:3000/api/x-transaction-redis"
-          API_BYPASS_URL="http://127.0.0.1:3000/api/bypass"
-
           send_request() {
             local url="$1"
             local num="$2"
@@ -87,19 +87,26 @@ jobs:
             BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS\:.*//g')
             STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
 
-            if [[ "$STATUS" -ge 200 && "$STATUS" -lt 300 ]]; then
-              echo "✅ API-req-$num Success: $BODY"
+            if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+              if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ]; then
+                echo "✅ API-req-$num Success: $BODY"
+              else
+                echo "❌ API-req-$num Failed (HTTP $STATUS): $BODY"
+              fi
             else
               echo "❌ API-req-$num Failed (HTTP $STATUS): $BODY"
             fi
           }
 
-          # Test /x-transaction-redis endpoint
+          API_URL="http://127.0.0.1:3000/api/x-transaction-redis"
+          API_BYPASS_URL="http://127.0.0.1:3000/api/bypass"
+
+          echo "--- Testing POST requests to $API_URL ---"
           for i in 1 2 3; do
             send_request "$API_URL" "$i"
           done
 
-          # Test /bypass endpoint
+          echo "--- Testing POST requests to $API_BYPASS_URL ---"
           for i in 4 5 6; do
             send_request "$API_BYPASS_URL" "$i"
           done
