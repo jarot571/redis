@@ -22,61 +22,83 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Wait for Redis service
+      - name: Wait for Redis service to be ready
         run: |
-          echo "Waiting for Redis..."
+          # Use a loop with redis-cli to check for the PONG response
+          echo "Waiting for Redis to be healthy..."
           for i in $(seq 1 10); do
             if docker exec test-redis-server redis-cli ping | grep -q PONG; then
-              echo "Redis is ready!"
+              echo "Redis is up and running!"
               exit 0
             fi
-            echo "Attempt $i failed, retrying..."
+            echo "Attempt $i failed. Waiting 5 seconds..."
             sleep 5
           done
-          echo "Redis did not start"
+          echo "Redis service failed to start after multiple attempts."
           exit 1
-
-      - name: Build Node.js Docker image
+      
+      - name: Build application Docker image
         run: docker build -t my-app .
 
-      - name: Start Node.js container
+      - name: Start application container
         run: |
-          docker run -d \
+          docker run \
+            -d \
             --name app-node \
+            --network host \
+            -e REDIS_HOST=127.0.0.1 \
             -p 3000:3000 \
-            -e REDIS_HOST=redis \
             my-app
-
-      - name: Wait for Node.js app
+      - name: Run API tests with Curl
         run: |
-          API_URL="http://127.0.0.1:3000/api/x-transaction-redis"
-          for i in $(seq 1 20); do
-            if curl -s $API_URL >/dev/null; then
-              echo "App-node is ready!"
-              break
-            fi
-            echo "Attempt $i: App not ready yet..."
-            sleep 5
-          done
-
-      - name: Run API tests
-        run: |
+          echo "Waiting for app-node to be ready..."
+          sleep 10
+          
           API_URL="http://127.0.0.1:3000/api/x-transaction-redis"
           API_BYPASS_URL="http://127.0.0.1:3000/api/bypass"
-
-          for url in $API_URL $API_URL $API_URL $API_BYPASS_URL $API_BYPASS_URL $API_BYPASS_URL; do
-            RESPONSE=$(curl -s -X POST $url \
-              -H "Content-Type: application/json" \
-              -H "x-transaction-id: 2025-08-14" \
-              -d '{"message":"Test from CI/CD"}')
-            echo "Response from $url: $RESPONSE"
-          done
-
+          
+          echo "--- Testing POST request to $API_URL ---"
+          
+          RESPONSE1=$(curl -s -X POST $API_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: 2025-08-13" \
+            -d '{"message":"Test from CI/CD"}' \
+          )
+          echo "API-req-1 Response: $RESPONSE1"
+          RESPONSE2=$(curl -s -X POST $API_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: 2025-08-13" \
+            -d '{"message":"Test from CI/CD"}' \
+          )
+          echo "API-req-2 Response: $RESPONSE2"
+          RESPONSE3=$(curl -s -X POST $API_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: 2025-08-13" \
+            -d '{"message":"Test from CI/CD"}' \
+          )
+          echo "API-req-3 Response: $RESPONSE3"
+          RESPONSE4=$(curl -s -X POST $API_BYPASS_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: 2025-08-13" \
+            -d '{"message":"Test from CI/CD"}' \
+          )
+          echo "API-req-4 Response: $RESPONSE4"
+          RESPONSE5=$(curl -s -X POST $API_BYPASS_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: 2025-08-13" \
+            -d '{"message":"Test from CI/CD"}' \
+          )
+          echo "API-req-5 Response: $RESPONSE5"
+          RESPONSE6=$(curl -s -X POST $API_BYPASS_URL \
+            -H "Content-Type: application/json" \
+            -H "x-transaction-id: 2025-08-13" \
+            -d '{"message":"Test from CI/CD"}' \
+          )
+          echo "API-req-6 Response: $RESPONSE6"
       - name: Cleanup containers
         if: always()
         run: |
