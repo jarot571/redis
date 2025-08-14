@@ -1,49 +1,26 @@
-name: Node.js API Test Redis
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-
 jobs:
   test-api:
     runs-on: ubuntu-latest
-
     services:
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
+      app:
+        image: my-app
+        ports:
+          - 3000:3000
         options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --env REDIS_HOST=redis
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Build application Docker image
-        run: docker build -t my-app .
-
-      - name: Start application container
-        run: |
-          docker run \
-            -d \
-            --name app-node \
-            -e REDIS_HOST=redis \
-            -p 3000:3000 \
-            my-app
-
-      - name: Wait for app to be ready
+      - name: Wait for app to start
         run: |
           echo "Waiting for Node app to start..."
           for i in $(seq 1 10); do
-            if curl -s http://127.0.0.1:3000 >/dev/null; then
+            if curl -s http://app:3000 >/dev/null; then
               echo "Node app is up!"
               break
             fi
@@ -51,32 +28,9 @@ jobs:
             sleep 5
           done
 
-      - name: Run API tests with Curl
+      - name: Run API tests
         run: |
-          API_URL="http://127.0.0.1:3000/api/x-transaction-redis"
-          API_BYPASS_URL="http://127.0.0.1:3000/api/bypass"
-
-          echo "--- Testing POST request to $API_URL ---"
-          RESPONSE1=$(curl -s -X POST $API_URL \
+          curl -s -X POST http://app:3000/api/x-transaction-redis \
             -H "Content-Type: application/json" \
             -H "x-transaction-id: 2025-08-13" \
-            -d '{"message":"Test from CI/CD"}')
-          echo "API-req-1 Response: $RESPONSE1"
-
-          RESPONSE2=$(curl -s -X POST $API_URL \
-            -H "Content-Type: application/json" \
-            -H "x-transaction-id: 2025-08-13" \
-            -d '{"message":"Test from CI/CD"}')
-          echo "API-req-2 Response: $RESPONSE2"
-
-          RESPONSE3=$(curl -s -X POST $API_BYPASS_URL \
-            -H "Content-Type: application/json" \
-            -H "x-transaction-id: 2025-08-13" \
-            -d '{"message":"Test from CI/CD"}')
-          echo "API-req-3 Response: $RESPONSE3"
-
-      - name: Cleanup containers
-        if: always()
-        run: |
-          docker stop app-node || true
-          docker rm app-node || true
+            -d '{"message":"Test from CI/CD"}'
