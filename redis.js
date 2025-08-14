@@ -1,11 +1,16 @@
 const redis = require('redis');
 
-const client = redis.createClient({
-  host: process.env.REDIS_HOST || 'localhost',
+const redisClient = redis.createClient({
+  host: 'redis-FBB4System-az-asse-dev-001.redis.cache.windows.net', // or your Redis server host
   port: 6379
 });
 
-client.on('connect', () => console.log('✅ Connected to Redis'));
-client.on('error', (err) => console.error('❌ Redis error:', err));
+// Event handlers
+redisClient.on('connect', () => {
+  console.log('Connected to Redis');
+});
 
-module.exports = client;
+redisClient.on('error', (err) => {
+  console.error('Redis error:', err);
+});
+
