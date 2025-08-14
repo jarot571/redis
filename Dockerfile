@@ -4,17 +4,17 @@ FROM node:20-alpine
 # Set the working directory inside the container.
 WORKDIR /app
 
-# Copy the package.json and package-lock.json to install dependencies.
+# Copy only package files first to leverage Docker layer caching.
 COPY package*.json ./
 
 # Install project dependencies.
-RUN npm install
+RUN npm ci --omit=dev
 
-# Copy the entire project into the container.
+# Copy the rest of the project files.
 COPY . .
 
 # Expose the port the app listens on.
 EXPOSE 3000
 
-# Command to run the application.
-CMD [ "node", "app.js" ]
+# Default command to run the application.
+CMD ["node", "app.js"]
