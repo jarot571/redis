@@ -3,10 +3,10 @@ name: Node.js API Test Redis
 on:
   push:
     branches:
-      - release-001
+      - realease-001
   pull_request:
     branches:
-      - release-001
+      - realease-001
 
 jobs:
   test-api:
