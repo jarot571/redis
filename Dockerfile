@@ -1,23 +1,20 @@
-# Use Node 10-alpine to match your production
-FROM node:10.19.0-alpine
+# Use a Node.js 20-alpine base image for a small, efficient container.
+FROM node:14.19.0-alpine
 
-# Set working directory
+# Set the working directory inside the container.
 WORKDIR /app
 
-# Install build tools for native dependencies
-RUN apk add --no-cache build-base python
-
-# Copy package.json first to leverage caching
+# Copy the package.json and package-lock.json to install dependencies.
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm install --production
+# Install project dependencies.
+RUN npm install
 
-# Copy the rest of the app
+# Copy the entire project into the container.
 COPY . .
 
-# Expose port the app runs on
+# Expose the port the app listens on.
 EXPOSE 3000
 
-# Start the app
-CMD ["node", "app.js"]
+# Command to run the application.
+CMD [ "node", "app.js" ]
