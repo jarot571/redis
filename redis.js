@@ -4,7 +4,10 @@ const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
 
 const redisClient = redis.createClient({
-  socket: { host: REDIS_HOST, port: REDIS_PORT }
+  socket: {
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: process.env.REDIS_PORT || 6379,
+  }
 });
 
 redisClient.on('connect', () => console.log(`Connected to Redis at ${REDIS_HOST}:${REDIS_PORT}`));
